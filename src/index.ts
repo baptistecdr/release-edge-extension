@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import * as core from "@actions/core";
-import {EWSClient} from "./ews";
+import { EWSClient } from "./ews";
 
 async function run(): Promise<void> {
   const apiKey = core.getInput("api-key");
