@@ -1,0 +1,21 @@
+name: Release Edge Extension
+description: Publish an Edge extension in the Edge Web Store
+author: Baptiste C.
+
+inputs:
+  api-key:
+    description: The API key for the Edge Web Store API
+    required: true
+  client-id:
+    description: The Client ID for the Edge Web Store API associated to the API key
+    required: true
+  product-id:
+    description: The Product ID of the Edge extension
+    required: true
+  product-path:
+    description: The path to the Edge extension zip file
+    required: true
+
+runs:
+  using: node22
+  main: index.js

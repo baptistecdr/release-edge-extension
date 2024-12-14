@@ -1,0 +1,25 @@
+{
+  "name": "release-edge-extension",
+  "version": "0.0.1-0",
+  "description": "Publish an edge extension in the Edge Web Store ",
+  "main": "dist/index.js",
+  "type": "module",
+  "repository": "git@github.com:baptistecdr/release-edge-extension.git",
+  "author": "Baptiste C. <11665396+baptistecdr@users.noreply.github.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "biome check",
+    "lint:fix": "biome check --fix --unsafe",
+    "package": "ncc build src/index.ts && cp action.yml README.md dist/"
+  },
+  "dependencies": {
+    "@actions/core": "1.11.1",
+    "@vercel/ncc": "0.38.3",
+    "typescript": "5.6.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/node": "22.9.0"
+  },
+  "packageManager": "yarn@4.5.1"
+}
