@@ -16,7 +16,7 @@ export class EWSClient {
   }
 
   async updateItem(productId: string, zip: Blob): Promise<string> {
-    const response = await this.proceed<string>(
+    const response = await this.proceed(
       "POST",
       `/${productId}/submissions/draft/package`,
       {
@@ -34,7 +34,7 @@ export class EWSClient {
   }
 
   async publishItem(productId: string): Promise<string> {
-    const response = await this.proceed<string>("POST", `/${productId}/submissions`);
+    const response = await this.proceed("POST", `/${productId}/submissions`);
     if (response.status === 202) {
       if (!response.headers.has("Location")) {
         throw new Error("operationID not found");
@@ -44,7 +44,7 @@ export class EWSClient {
     throw new Error(`Failed to publish item: ${response.status} ${response.statusText}`);
   }
 
-  private async proceed<T>(method: string, path: string, customHeaders?: Record<string, string>, body?: BodyInit): Promise<Response> {
+  private async proceed(method: string, path: string, customHeaders?: Record<string, string>, body?: BodyInit): Promise<Response> {
     const url = `${BASE_URL}${path}`;
     const headers: Record<string, string> = {
       Authorization: `ApiKey ${this.apiKey}`,
