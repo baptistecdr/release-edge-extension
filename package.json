@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.5",
-    "@types/node": "22.15.32"
+    "@types/node": "22.15.33"
   },
   "packageManager": "yarn@4.9.2"
 }
