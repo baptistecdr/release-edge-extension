@@ -25810,7 +25810,7 @@ class EWSClient {
         this.apiKey = apiKey;
         this.clientId = clientId;
     }
-    async updateItem(productId, zip) {
+    async uploadPackage(productId, zip) {
         const response = await this.proceed("POST", `/${productId}/submissions/draft/package`, {
             "Content-Type": "application/zip",
         }, zip);
@@ -25820,17 +25820,52 @@ class EWSClient {
             }
             return response.headers.get("Location");
         }
-        throw new Error(`Failed to update item: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to upload package: ${response.status} ${response.statusText}`);
     }
-    async publishItem(productId) {
-        const response = await this.proceed("POST", `/${productId}/submissions`);
+    async checkUploadStatus(productId, operationId, retryLimit, retryAfterPeriod) {
+        let retryCount = 1;
+        let uploadStatus = "InProgress";
+        while (uploadStatus === "InProgress") {
+            if (retryCount > retryLimit) {
+                throw new Error("Retry limit exceeded");
+            }
+            const response = await this.proceed("GET", `/${productId}/submissions/draft/package/operations/${operationId}`);
+            const content = await response.json();
+            uploadStatus = content.status;
+            if (uploadStatus === "InProgress") {
+                retryCount++;
+                await new Promise((resolve) => setTimeout(resolve, retryAfterPeriod * 1000));
+            }
+        }
+        return uploadStatus;
+    }
+    async publishSubmission(productId, publishNotes) {
+        const body = publishNotes ? JSON.stringify({ notes: publishNotes }) : undefined;
+        const response = await this.proceed("POST", `/${productId}/submissions`, { "Content-Type": "application/json" }, body);
         if (response.status === 202) {
             if (!response.headers.has("Location")) {
                 throw new Error("operationID not found");
             }
             return response.headers.get("Location");
         }
-        throw new Error(`Failed to publish item: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to publish submission: ${response.status} ${response.statusText}`);
+    }
+    async checkPublishStatus(productId, operationId, retryLimit, retryAfterPeriod) {
+        let retryCount = 1;
+        let publishStatus = "InProgress";
+        while (publishStatus === "InProgress") {
+            if (retryCount > retryLimit) {
+                throw new Error("Retry limit exceeded");
+            }
+            const response = await this.proceed("GET", `/${productId}/submissions/operations/${operationId}`);
+            const content = await response.json();
+            publishStatus = content.status;
+            if (publishStatus === "InProgress") {
+                retryCount++;
+                await new Promise((resolve) => setTimeout(resolve, retryAfterPeriod * 1000));
+            }
+        }
+        return publishStatus;
     }
     async proceed(method, path, customHeaders, body) {
         const url = `${BASE_URL}${path}`;
@@ -25867,17 +25902,22 @@ __nccwpck_require__.a(module, async (__webpack_handle_async_dependencies__, __we
 
 
 async function run() {
-    const apiKey = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput("api-key");
-    const clientId = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput("client-id");
-    const productId = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput("product-id");
-    const productPath = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput("product-path");
+    const apiKey = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput("api-key", { required: true });
+    const clientId = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput("client-id", { required: true });
+    const productId = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput("product-id", { required: true });
+    const productPath = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput("product-path", { required: true });
+    const publishNotes = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput("publish-notes");
+    const retryLimit = Number.parseInt(_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput("retry-limit"), 10) || 10;
+    const retryAfterPeriod = Number.parseInt(_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput("retry-after-period"), 10) || 5;
     const client = new _ews__WEBPACK_IMPORTED_MODULE_2__/* .EWSClient */ .j({ apiKey, clientId });
     const zip = await node_fs__WEBPACK_IMPORTED_MODULE_0___default().openAsBlob(productPath);
-    const updateResult = await client.updateItem(productId, zip);
-    _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Update product result: ${updateResult}`);
-    const publishResult = await client.publishItem(productId);
-    _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Publish product result: ${publishResult}`);
-    _actions_core__WEBPACK_IMPORTED_MODULE_1__.info("Edge Extension published!");
+    const uploadOperationId = await client.uploadPackage(productId, zip);
+    _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Upload package result: ${uploadOperationId}`);
+    const uploadStatus = await client.checkUploadStatus(productId, uploadOperationId, retryLimit, retryAfterPeriod);
+    _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Upload package status: ${uploadStatus}`);
+    const publishOperationId = await client.publishSubmission(productId, publishNotes);
+    const publishStatus = await client.checkPublishStatus(productId, publishOperationId, retryLimit, retryAfterPeriod);
+    _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Final Publish Status: ${publishStatus}`);
 }
 try {
     await run();
