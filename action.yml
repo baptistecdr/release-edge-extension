@@ -15,6 +15,16 @@ inputs:
   product-path:
     description: The path to the Edge extension zip file
     required: true
+  publish-notes:
+    description: The release notes for this extension. This will be visible to users in the Edge Add-ons store.
+    required: false
+  retry-limit:
+    description: The maximum number of retries for API calls if the operation is still in progress.
+    required: false
+    default: "10"
+  retry-after-period:
+    description: The delay, in seconds, between retry attempts for API calls.
+    default: "5"
 
 runs:
   using: node24

@@ -15,7 +15,7 @@ export class EWSClient {
     this.clientId = clientId;
   }
 
-  async updateItem(productId: string, zip: Blob): Promise<string> {
+  public async uploadPackage(productId: string, zip: Blob): Promise<string> {
     const response = await this.proceed(
       "POST",
       `/${productId}/submissions/draft/package`,
@@ -30,18 +30,64 @@ export class EWSClient {
       }
       return response.headers.get("Location") as string;
     }
-    throw new Error(`Failed to update item: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to upload package: ${response.status} ${response.statusText}`);
   }
 
-  async publishItem(productId: string): Promise<string> {
-    const response = await this.proceed("POST", `/${productId}/submissions`);
+  public async checkUploadStatus(productId: string, operationId: string, retryLimit: number, retryAfterPeriod: number): Promise<string> {
+    let retryCount = 1;
+    let uploadStatus = "InProgress";
+
+    while (uploadStatus === "InProgress") {
+      if (retryCount > retryLimit) {
+        throw new Error("Retry limit exceeded");
+      }
+
+      const response = await this.proceed("GET", `/${productId}/submissions/draft/package/operations/${operationId}`);
+      const content = await response.json();
+      uploadStatus = content.status;
+
+      if (uploadStatus === "InProgress") {
+        retryCount++;
+        await new Promise((resolve) => setTimeout(resolve, retryAfterPeriod * 1000));
+      }
+    }
+
+    return uploadStatus;
+  }
+
+  public async publishSubmission(productId: string, publishNotes?: string): Promise<string> {
+    const body = publishNotes ? JSON.stringify({ notes: publishNotes }) : undefined;
+    const response = await this.proceed("POST", `/${productId}/submissions`, { "Content-Type": "application/json" }, body);
+
     if (response.status === 202) {
       if (!response.headers.has("Location")) {
         throw new Error("operationID not found");
       }
       return response.headers.get("Location") as string;
     }
-    throw new Error(`Failed to publish item: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to publish submission: ${response.status} ${response.statusText}`);
+  }
+
+  public async checkPublishStatus(productId: string, operationId: string, retryLimit: number, retryAfterPeriod: number): Promise<string> {
+    let retryCount = 1;
+    let publishStatus = "InProgress";
+
+    while (publishStatus === "InProgress") {
+      if (retryCount > retryLimit) {
+        throw new Error("Retry limit exceeded");
+      }
+
+      const response = await this.proceed("GET", `/${productId}/submissions/operations/${operationId}`);
+      const content = await response.json();
+      publishStatus = content.status;
+
+      if (publishStatus === "InProgress") {
+        retryCount++;
+        await new Promise((resolve) => setTimeout(resolve, retryAfterPeriod * 1000));
+      }
+    }
+
+    return publishStatus;
   }
 
   private async proceed(method: string, path: string, customHeaders?: Record<string, string>, body?: BodyInit): Promise<Response> {
