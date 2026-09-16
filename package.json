@@ -19,6 +19,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",
-    "@types/node": "24.13.4"
+    "@types/node": "24.13.5"
   }
 }
