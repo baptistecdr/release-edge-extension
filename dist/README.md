@@ -20,7 +20,7 @@ The minimal usage is as follows:
 All supported inputs are the following:
 
 | Name                 | Description                                                                                    | Required | Default |
-|----------------------|------------------------------------------------------------------------------------------------|----------|---------|
+| -------------------- | ---------------------------------------------------------------------------------------------- | -------- | ------- |
 | `api-key`            | The API key for the Edge Web Store API                                                         | Yes      |         |
 | `client-id`          | The Client ID for the Edge Web Store API associated with the API key                           | Yes      |         |
 | `product-id`         | The Product ID of the Edge extension                                                           | Yes      |         |
